@@ -3,6 +3,8 @@ const bodyParser = require('body-parser');
 const fs = require('fs');
 const path = require('path');
 const { Parser } = require('json2csv');
+const allowedBadges = JSON.parse(fs.readFileSync('./allowed_badges.json'));
+
 
 const app = express();
 const PORT = process.env.PORT || 3000;
