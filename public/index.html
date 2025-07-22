@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Beer Claim</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+  <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
+    <h1 class="text-xl font-bold mb-4">Claim Your Drink</h1>
+    <form id="beerForm" class="space-y-4">
+      <input type="text" id="badge" placeholder="Enter your badge number"
+             class="w-full border rounded-lg px-4 py-2" required>
+      <select id="drink" class="w-full border rounded-lg px-4 py-2" required>
+        <option value="">Select your drink</option>
+        <option value="Heineken">Heineken</option>
+        <option value="Castle">Castle</option>
+        <option value="Black Label">Black Label</option>
+        <option value="Coke">Coke</option>
+      </select>
+      <button type="submit"
+              class="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700">
+        Claim
+      </button>
+    </form>
+    <p id="message" class="mt-4 text-center font-medium"></p>
+  </div>
+
+  <script>
+    document.getElementById('beerForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const badge = document.getElementById('badge').value;
+      const drink = document.getElementById('drink').value;
+      const msg = document.getElementById('message');
+
+      const res = await fetch('/claim', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ badge, drink })
+      });
+      const data = await res.json();
+      msg.textContent = data.message;
+      msg.className = data.success ? 'text-green-600' : 'text-red-600';
+    });
+  </script>
+</body>
+</html>
