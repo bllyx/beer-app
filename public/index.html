@@ -1,47 +1,92 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Beer Claim</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Claim Your Drink</title>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@2.1.5/dist/tesseract.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 400px;
+      margin: 40px auto;
+      padding: 20px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+    button, select, input {
+      padding: 10px;
+      margin-top: 10px;
+      width: 100%;
+    }
+  </style>
 </head>
-<body class="bg-gray-100 flex items-center justify-center min-h-screen">
-  <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-    <h1 class="text-xl font-bold mb-4">Claim Your Drink</h1>
-    <form id="beerForm" class="space-y-4">
-      <input type="text" id="badge" placeholder="Enter your badge number"
-             class="w-full border rounded-lg px-4 py-2" required>
-      <select id="drink" class="w-full border rounded-lg px-4 py-2" required>
-        <option value="">Select your drink</option>
-        <option value="Heineken">Heineken</option>
-        <option value="Castle">Castle</option>
-        <option value="Black Label">Black Label</option>
-        <option value="Coke">Coke</option>
-      </select>
-      <button type="submit"
-              class="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700">
-        Claim
-      </button>
-    </form>
-    <p id="message" class="mt-4 text-center font-medium"></p>
-  </div>
+<body>
+  <h2>Claim Your Drink</h2>
+  <label for="badgeInput">Badge Number:</label>
+  <input type="text" id="badgeInput" placeholder="Scan or enter badge number" />
+  <button onclick="scanBadge()">Scan Badge</button>
+
+  <label for="drink">Select Drink:</label>
+  <select id="drink">
+    <option>-Select Drink-</option>
+    <option>Beer</option>
+    <option>Cider</option>
+    <option>Soft Drink</option>
+  </select>
+
+  <button onclick="submitForm()">Submit</button>
+
+  <video id="video" autoplay style="display:none;width:100%;margin-top:10px;"></video>
+  <canvas id="canvas" style="display:none;"></canvas>
 
   <script>
-    document.getElementById('beerForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const badge = document.getElementById('badge').value;
-      const drink = document.getElementById('drink').value;
-      const msg = document.getElementById('message');
+    async function scanBadge() {
+      const video = document.getElementById('video');
+      const canvas = document.getElementById('canvas');
+      const ctx = canvas.getContext('2d');
 
-      const res = await fetch('/claim', {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        video.srcObject = stream;
+        video.style.display = 'block';
+
+        setTimeout(async () => {
+          ctx.drawImage(video, 0, 0, canvas.width = video.videoWidth, canvas.height = video.videoHeight);
+          video.srcObject.getTracks().forEach(track => track.stop());
+          video.style.display = 'none';
+
+          const { data: { text } } = await Tesseract.recognize(canvas, 'eng');
+          const match = text.match(/KAMS[_\-]ATS\d+/i);
+          if (match) {
+            document.getElementById('badgeInput').value = match[0].toUpperCase();
+          } else {
+            alert('Could not detect badge number. Try again.');
+          }
+        }, 3000);
+      } catch (err) {
+        alert('Camera error: ' + err.message);
+      }
+    }
+
+    function submitForm() {
+      const badge = document.getElementById('badgeInput').value;
+      const drink = document.getElementById('drink').value;
+
+      if (!badge || drink === '-Select Drink-') {
+        alert('Please enter badge number and select a drink.');
+        return;
+      }
+
+      fetch('/claim', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ badge, drink })
+      }).then(res => {
+        if (res.ok) alert('Drink claimed!');
+        else alert('Error: ' + res.statusText);
       });
-      const data = await res.json();
-      msg.textContent = data.message;
-      msg.className = data.success ? 'text-green-600' : 'text-red-600';
-    });
+    }
   </script>
 </body>
 </html>
